@@ -1,0 +1,61 @@
+name: DVD Rental CICD
+
+on:
+  push:
+    branches:
+      - cicd      
+  pull_request:
+    branches:
+      - main      
+
+jobs:
+  test:
+    name: CICD tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sakila_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: sakila_test
+      JWT_SECRET: test_secret_key
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run Backend Tests
+        working-directory: ./backend
+        run: npm test
+
+      - name: Image Server Dependencies
+        working-directory: ./image-server
+        run: npm ci
+
+      - name: Run Image Server Tests
+        working-directory: ./image-server
+        run: npm test
