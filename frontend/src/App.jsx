@@ -17,7 +17,6 @@ import MagnifyIcon from './assets/images/Search.svg'
 function Navbar({ searchQ, setSearchQ, rating, setRating, onSearch }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const currentTab = location.pathname === '/' ? 'catalog' : ''
   const token = localStorage.getItem('token')
 
   const handleKeyDown = (e) => {
@@ -110,6 +109,7 @@ function Navbar({ searchQ, setSearchQ, rating, setRating, onSearch }) {
 export default function App() {
   const [searchQ, setSearchQ] = useState('')
   const [rating, setRating] = useState('')
+  // eslint-disable-next-line no-unused-vars
   const [categoryId, setCategoryId] = useState('')
 
   function handleSearch(query) {
