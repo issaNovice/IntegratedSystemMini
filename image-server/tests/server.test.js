@@ -4,9 +4,14 @@ import fs from 'fs';
 import express from 'express';
 import serverModule from '../server.js';
 
-// Because server.js calls app.listen(), we need to slightly refactor it.
-// For now, we’ll re-import the app by creating an export inside server.js.
-// (I'll show you how below)
+beforeAll(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterAll(() => {
+  console.error.mockRestore();
+});
+
 const app = serverModule.app; // Access exported app
 
 describe('Image Upload API', () => {
