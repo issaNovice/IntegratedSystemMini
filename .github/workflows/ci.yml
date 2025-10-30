@@ -1,4 +1,4 @@
-name: 🚀 CI - DVD Rental App
+name: DVD Rental CICD
 
 on:
   push:
