@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+/* If Tailwind styles do not appear, ensure the dev server restarted
+   after installing tailwind/postcss, and that postcss.config.js exists. */
+
+html, body, #root {
+  height: 100%;
+}
+
+@font-face {
+  font-family: 'HelveticaCustom';
+  src: url('./assets/fonts/HelveticaNeueRoman.otf'),;
+  font-weight: 400; /* normal */
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('./assets/fonts/Poppins-Regular.ttf'),;
+  font-weight: 400; /* normal */
+  font-style: normal;
+}
+
+body {
+  font-family: 'Poppins';
+}

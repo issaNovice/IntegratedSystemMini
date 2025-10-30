@@ -1,0 +1,120 @@
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import axios from 'axios' // ← Original backend
+import Skeleton from '../components/Skeleton.jsx'
+
+export default function Catalog() {
+  const [films, setFilms] = useState([])
+  const [q, setQ] = useState('')
+  const [rating, setRating] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [pagination, setPagination] = useState({ total: 0, limit: 20, offset: 0 })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const params = useMemo(() => ({
+    q: q || undefined,
+    rating: rating || undefined,
+    category_id: categoryId || undefined,
+    limit: pagination.limit,
+    offset: pagination.offset,
+  }), [q, rating, categoryId, pagination.limit, pagination.offset])
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchFilms() {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await axios.get('/api/films', { params })
+        if (!cancelled) {
+          setFilms(res.data.data || [])
+          setPagination((p) => ({ ...p, ...res.data.pagination }))
+        }
+
+        // --- Dummy data mode ---
+        // const allFilms = filmsData
+        // let filtered = allFilms.filter(f =>
+        //   (!params.q || f.title.toLowerCase().includes(params.q.toLowerCase())) &&
+        //   (!params.rating || f.rating === params.rating)
+        // )
+        // const total = filtered.length
+        // const paginated = filtered.slice(params.offset, params.offset + params.limit)
+        // if (!cancelled) {
+        //   setFilms(paginated)
+        //   setPagination(p => ({ ...p, total }))
+        // }
+        
+      } catch (err) {
+        if (!cancelled) setError('Failed to load dummy data')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchFilms()
+    return () => { cancelled = true }
+  }, [params])
+
+  function go(delta) {
+    const next = Math.max(0, pagination.offset + delta)
+    setPagination((p) => ({ ...p, offset: next }))
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/40 dark:to-purple-900/40 border border-indigo-100 dark:border-indigo-900 p-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-indigo-900 dark:text-indigo-100">Explore the Catalog</h1>
+        <p className="text-sm text-indigo-700 dark:text-indigo-300 mt-1">Search and filter thousands of titles from the Sakila dataset.</p>
+      </div>
+      <div className="flex flex-wrap gap-3 items-center">
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title or description" className="border rounded px-4 py-2.5 flex-1 min-w-48 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700" />
+        <select value={rating} onChange={(e) => setRating(e.target.value)} className="border rounded px-4 py-2.5 shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700">
+          <option value="">All ratings</option>
+          {['G','PG','PG-13','R','NC-17'].map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <input value={categoryId} onChange={(e) => setCategoryId(e.target.value)} placeholder="Category ID" className="border rounded px-4 py-2.5 w-44 shadow-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700" />
+      </div>
+
+      {loading && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="border rounded p-4 bg-white shadow-sm">
+              <Skeleton className="h-5 w-2/3 mb-3" />
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-5/6 mb-2" />
+              <Skeleton className="h-3 w-1/2" />
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <div className="text-red-600">{error}</div>}
+
+      {!loading && (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {films.map(f => (
+            <Link key={f.film_id} to={`/film/${f.film_id}`} className="group border rounded-xl p-5 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+              <div className="font-semibold text-lg group-hover:text-indigo-600 transition-colors flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-indigo-500 group-hover:scale-125 transition-transform" />
+                {f.title}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mt-1">{f.description}</div>
+              <div className="text-xs mt-3 flex flex-wrap gap-2">
+                {(f.categories || '').split(',').filter(Boolean).map(cat => (
+                  <span key={cat} className="px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-200 border border-indigo-100 dark:border-indigo-800">{cat}</span>
+                ))}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
+        <button className="px-3 py-2 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border dark:border-slate-700 shadow-sm disabled:opacity-50" disabled={pagination.offset === 0} onClick={() => go(-pagination.limit)}>Prev</button>
+        <div className="text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border dark:border-slate-700 rounded px-3 py-2 shadow-sm">
+          {pagination.offset + 1} - {Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total}
+        </div>
+        <button className="px-3 py-2 rounded bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border dark:border-slate-700 shadow-sm disabled:opacity-50" disabled={pagination.offset + pagination.limit >= pagination.total} onClick={() => go(pagination.limit)}>Next</button>
+      </div>
+    </div>
+  )
+}

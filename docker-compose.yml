@@ -1,0 +1,68 @@
+services: 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: "${DB_USER}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_NAME: "${DB_NAME}"
+      JWT_SECRET: "${JWT_SECRET}"
+    ports:
+      - "4000:4000"
+    networks:
+      - dvd-network
+
+  image-server:
+    build:
+      context: ./image-server
+      dockerfile: Dockerfile
+    volumes:
+      - ./image-server/posters:/app/posters
+    ports:
+      - "5000:5000"
+    networks:
+      - dvd-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - HOST=0.0.0.0
+    networks:
+      - dvd-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${DB_NAME}"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    env_file:
+      - ./backend/.env
+    networks:
+      - dvd-network 
+      
+volumes:
+  mysql-data:
+
+networks:
+  dvd-network:
+    driver: bridge
